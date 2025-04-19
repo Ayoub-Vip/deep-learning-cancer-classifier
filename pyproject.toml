@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "recommendor"
+version = "0.0.1"
+description = "this project is a part of the deep learning course, lectured by Mr. Louppe."
+authors = [
+  { name = "ayoub-ramzan-hiba" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "==3.11.11"
+
+
+[tool.ruff]
+line-length = 99
+src = ["recommendor"]
+include = ["pyproject.toml", "recommendor/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["recommendor"]
+force-sort-within-sections = true
+
