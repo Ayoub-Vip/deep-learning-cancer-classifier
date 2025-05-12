@@ -3,11 +3,11 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "recommendor"
+name = "cancer_classifier"
 version = "0.0.1"
-description = "this project is a part of the deep learning course, lectured by Mr. Louppe."
+description = "this DL model classifies the type of cancer in MRI brain images"
 authors = [
-  { name = "ayoub-ramzan-hiba" },
+  { name = "ayoub, hiba, ramzan" },
 ]
 
 readme = "README.md"
@@ -20,13 +20,13 @@ requires-python = "==3.11.11"
 
 [tool.ruff]
 line-length = 99
-src = ["recommendor"]
-include = ["pyproject.toml", "recommendor/**/*.py"]
+src = ["cancer_classifier"]
+include = ["pyproject.toml", "cancer_classifier/**/*.py"]
 
 [tool.ruff.lint]
 extend-select = ["I"]  # Add import sorting
 
 [tool.ruff.lint.isort]
-known-first-party = ["recommendor"]
+known-first-party = ["cancer_classifier"]
 force-sort-within-sections = true
 

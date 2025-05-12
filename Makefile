@@ -2,7 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME = deep-learning-sys-recommender
+PROJECT_NAME = deep-learning-cancer-classifier
 PYTHON_VERSION = 3.11.11
 PYTHON_INTERPRETER = python
 
@@ -60,7 +60,7 @@ create_environment:
 ## Make dataset
 .PHONY: data
 data: requirements
-	$(PYTHON_INTERPRETER) recommendor/dataset.py
+	$(PYTHON_INTERPRETER) cancer_classifier/dataset.py
 
 
 #################################################################################

@@ -1,8 +1,8 @@
-# deep-learning documentation!
+# cancer-classifier documentation!
 
 ## Description
 
-this project is a part of the deep learning course, lectured by Mr. Louppe.
+this DL model classifies the type of cancer in MRI brain images, the project is a part of the deep learning course, lectured by Mr. Louppe.
 
 ## Commands
 
