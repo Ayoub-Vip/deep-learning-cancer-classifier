@@ -31,7 +31,7 @@ def visualize_sample_images(dataset, num_samples=5):
   plt.savefig(FIGURES_DIR / "visualize_sample_images.png")
   plt.show()
 
-def plot_confusion_matrix(true_classes, predicted_classes):
+def plot_confusion_matrix(true_classes, predicted_classes, model_name=None):
     
     cm = confusion_matrix(true_classes, predicted_classes)
     plt.figure(figsize=(8, 8))
@@ -39,7 +39,8 @@ def plot_confusion_matrix(true_classes, predicted_classes):
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
     plt.title('Confusion Matrix')
-    plt.savefig(FIGURES_DIR / "confusion_matrix.png")
+    file_name = model_name + "_confusion_matrix.png"
+    plt.savefig(FIGURES_DIR / file_name)
     plt.show()
 
 
