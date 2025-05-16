@@ -16,34 +16,36 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader
 
 
-def adjust_image_contrast(image, target_size=(256, 256)):
+def adjust_image_contrast(image, clip_limit=2.0, tile_size=(1, 1)):
 
-
-    # CLAHE: ajust contrast
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(1, 1))
+    # CLAHE: ajust contrast 
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_size)
     image_clahe = clahe.apply(image)
-
-    # image_clahe = cv2.resize(image_clahe, target_size)
-
-    # tensor = transforms.ToTensor()
-    # image_tensor = tensor(image_clahe)
 
     return image_clahe
 
-def crop_image(image_path, size=(256, 256)):
+def crop_image(image_path, size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    # assert image is not None, f"Failed to load image: {image_path}"
+    if image is None:
+        raise ValueError(f"Failed to load image: {image_path}")
     
-    image = adjust_image_contrast(image)
+    image = adjust_image_contrast(image, clip_limit, tile_size)
+    
     # Compute non-zero pixel indices
     non_zero_coords = np.argwhere(image > 0)  # Pixels greater than zero (non-black)
     
+    if non_zero_coords.size == 0:
+        raise ValueError(f"No non-black pixels found in the image: {image_path}")
+    
     # Find boundaries
     top_left = non_zero_coords.min(axis=0)  # Minimum row, col
-    bottom_right = non_zero_coords.max(axis=0)  # Maximum row, col
+    bottom_right = non_zero_coords.max(axis=0) + 1  # Maximum row, col (+1 to include the pixel)
     
     # Crop the image
     cropped_image = image[top_left[0]:bottom_right[0], top_left[1]:bottom_right[1]]
+    
+    # Resize to the target size
+    cropped_image = cv2.resize(cropped_image, size, interpolation=cv2.INTER_AREA)
     
     return cropped_image
 
