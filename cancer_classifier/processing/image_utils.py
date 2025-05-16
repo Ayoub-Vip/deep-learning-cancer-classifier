@@ -25,29 +25,26 @@ def adjust_image_contrast(image, clip_limit=2.0, tile_size=(1, 1)):
     return image_clahe
 
 def crop_image(image_path, size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if image is None:
-        raise ValueError(f"Failed to load image: {image_path}")
-    
-    image = adjust_image_contrast(image, clip_limit, tile_size)
-    
-    # Compute non-zero pixel indices
-    non_zero_coords = np.argwhere(image > 0)  # Pixels greater than zero (non-black)
-    
-    if non_zero_coords.size == 0:
-        raise ValueError(f"No non-black pixels found in the image: {image_path}")
-    
-    # Find boundaries
-    top_left = non_zero_coords.min(axis=0)  # Minimum row, col
-    bottom_right = non_zero_coords.max(axis=0) + 1  # Maximum row, col (+1 to include the pixel)
-    
-    # Crop the image
-    cropped_image = image[top_left[0]:bottom_right[0], top_left[1]:bottom_right[1]]
-    
-    # Resize to the target size
-    cropped_image = cv2.resize(cropped_image, size, interpolation=cv2.INTER_AREA)
-    
-    return cropped_image
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise ValueError(f"Failed to load {image_path}")
+    img = adjust_image_contrast(img, clip_limit, tile_size)
+
+    _, mask = cv2.threshold(img, 0, 255,
+                            cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # cv2.imshow("mask", mask); cv2.waitKey()
+
+    coords = np.column_stack(np.where(mask > 0))
+    if coords.size == 0:
+        raise ValueError("No foreground found in " + image_path)
+
+    y0, x0 = coords.min(axis=0)
+    y1, x1 = coords.max(axis=0) + 1  # +1 to include the edge pixel
+
+    cropped = img[y0:y1, x0:x1]
+    cropped = cv2.resize(cropped, size, interpolation=cv2.INTER_AREA)
+    return cropped
 
 def resize_image_tensor(image_tensor, size=(256, 256)):
     """Resizes an image to the given size."""
