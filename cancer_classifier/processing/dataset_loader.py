@@ -1,13 +1,20 @@
+from pathlib import Path
+
+from loguru import logger
+from tqdm import tqdm
+import typer
+
+from cancer_classifier.processing.image_utils import crop_image, adjust_image_contrast
+from cancer_classifier.config import RAW_DATA_DIR, PROCESSED_DATA_DIR, MODELS_DIR, CLASSES
+
 import os
+import cv2
+import numpy as np
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 from PIL import Image
-import numpy as np
-import matplotlib.pyplot as plt
-from cancer_classifier.processing.image_utils import crop_image, adjust_image_contrast
-from cancer_classifier.config import RAW_DATA_DIR, PROCESSED_DATA_DIR, CLASSES
-import cv2
 
 
 class BrainTumorDataset(Dataset):
@@ -47,19 +54,7 @@ class BrainTumorDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
-    def preprocess_images(self, img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
-        for i, cls in enumerate(CLASSES):
-            cls_dir = os.path.join(RAW_DATA_DIR, cls)
-            for img_name in os.listdir(cls_dir):
-                img_path = os.path.join(cls_dir, img_name)
-                img = crop_image(img_path, img_size, clip_limit, tile_size)
-                # img = adjust_image_contrast(img)
-
-                # save in processed directory
-                cv2.imwrite(os.path.join(PROCESSED_DATA_DIR, cls, img_name), img)
-            
-
-    def get_dataloader(self, batch_size, train_ratio=0.8, val_ratio=0.1):
+    def get_dataloaders(self, batch_size, train_ratio=0.8, val_ratio=0.1):
         rand_gen = torch.Generator().manual_seed(142)
         test_ratio = 1.0 - train_ratio - val_ratio
         train_dataset, val_dataset, test_dataset = random_split(
@@ -96,8 +91,40 @@ def unnormalize(img, input_mean, input_std):
     img = np.clip(img, 0, 1)
     return img
 
-if __name__ == "__main__":
-    
+def preprocess_images(directory=RAW_DATA_DIR,img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
+    for i, cls in tqdm(enumerate(CLASSES), colour="blue", desc="Processing classes"):
+        cls_dir = os.path.join(directory, cls)
+        for img_name in tqdm(os.listdir(cls_dir)):
+            img_path = os.path.join(cls_dir, img_name)
+            img = crop_image(img_path, img_size, clip_limit, tile_size)
+            # img = adjust_image_contrast(img)
+            # save in processed directory
+            cv2.imwrite(os.path.join(PROCESSED_DATA_DIR, cls, img_name), img)
+            
+
+
+
+
+
+#########################################################################
+app = typer.Typer()
+
+@app.command()
+def main(
+    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
+    features_path: Path = PROCESSED_DATA_DIR / "test_features.csv",
+    model_path: Path = MODELS_DIR / "model.pkl",
+    predictions_path: Path = PROCESSED_DATA_DIR / "test_predictions.csv",
+    # -----------------------------------------
+):
+    # ---- REPLACE THIS WITH YOUR OWN CODE ----
+    logger.info("Performing inference for model...")
+    for i in tqdm(range(10), total=10):
+        if i == 5:
+            logger.info("Something happened for iteration 5.")
+    logger.success("Inference complete.")
+    # -----------------------------------------
+
     ROOT_DIR = "../../data/raw/"
     BATCH_SIZE = 32
     MAX_SAMPLES = 1000
@@ -157,3 +184,7 @@ if __name__ == "__main__":
     
     plt.tight_layout()
     plt.show()
+
+
+if __name__ == "__main__":
+    app()
