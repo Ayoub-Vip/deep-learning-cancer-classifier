@@ -26,10 +26,12 @@ class BrainTumorDataset(Dataset):
     def __init__(self, root_dir, transform=None, max_samples=None):
         self.image_paths = []
         self.labels = []
-        self.class_to_idx = {
-            cls: idx for idx, cls in enumerate(sorted(os.listdir(root_dir)))
-            if os.path.isdir(os.path.join(root_dir, cls))
-            }
+        self.class_to_idx = {}
+        idx = 0 #to assign class indices starting from 0 if other files are present
+        for cls in sorted(os.listdir(root_dir)):
+            if os.path.isdir(os.path.join(root_dir, cls)):
+                self.class_to_idx[cls] = idx
+                idx += 1
         
         for cls in self.class_to_idx:
             cls_dir = os.path.join(root_dir, cls)
