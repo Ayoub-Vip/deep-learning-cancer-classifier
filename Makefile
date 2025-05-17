@@ -39,6 +39,32 @@ format:
 	ruff check --fix
 	ruff format
 
+## Run training in cluster mode SLURM
+.PHONY: train_cluster
+train_cluster:
+	@echo ">>> Running training in cluster mode"
+	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; workon $(PROJECT_NAME); else workon.bat $(PROJECT_NAME); fi"
+	@sbatch --job-name=$(PROJECT_NAME) --output=logs/%j.out --error=logs/%j.err --time=24:00:00 --ntasks=1 --cpus-per-task=4 --mem=16G --wrap='$(PYTHON_INTERPRETER) cancer_classifier/train.py'
+	@echo ">>> Training job submitted to SLURM. Check logs/ for output."
+
+
+## Run training in local mode
+.PHONY: train_local
+train_local:
+	@echo ">>> Running training in local mode"
+	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; workon $(PROJECT_NAME); else workon.bat $(PROJECT_NAME); fi"
+	@$(PYTHON_INTERPRETER) cancer_classifier/train.py
+	@echo ">>> Training job completed. Check logs/ for output."
+
+
+## Run training in local mode with GPU
+.PHONY: train_local_gpu
+train_local_gpu:
+	@echo ">>> Running training in local mode with GPU"
+	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; workon $(PROJECT_NAME); else workon.bat $(PROJECT_NAME); fi"
+	@$(PYTHON_INTERPRETER) cancer_classifier/train.py --use-gpu
+	@echo ">>> Training job completed. Check logs/ for output."
+
 
 
 
