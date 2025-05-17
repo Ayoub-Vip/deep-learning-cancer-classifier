@@ -5,6 +5,10 @@ from torchvision import transforms
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+from cancer_classifier.processing.image_utils import crop_image, adjust_image_contrast
+from cancer_classifier.config import RAW_DATA_DIR, PROCESSED_DATA_DIR, CLASSES
+import cv2
+
 
 class BrainTumorDataset(Dataset):
     """_summary_
@@ -42,12 +46,27 @@ class BrainTumorDataset(Dataset):
             image = self.transform(image)
         label = self.labels[idx]
         return image, label
-    
-def get_dataloader(input_dataset, batch_size, train_split=0.8, val_split=0.1):
-    train_size = int(train_split * len(input_dataset))
-    val_size = int(val_split * len(input_dataset))
-    test_size = len(input_dataset) - train_size - val_size
-    train_dataset, val_dataset, test_dataset = random_split(input_dataset, [train_size, val_size, test_size])
+
+def preprocess_images(img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
+    for i, cls in enumerate(CLASSES):
+        cls_dir = os.path.join(RAW_DATA_DIR, cls)
+        for img_name in os.listdir(cls_dir):
+            img_path = os.path.join(cls_dir, img_name)
+            img = crop_image(img_path, img_size, clip_limit, tile_size)
+            # img = adjust_image_contrast(img)
+
+            # save in processed directory
+            cv2.imwrite(os.path.join(PROCESSED_DATA_DIR, cls, img_name), img)
+        
+
+def get_dataloader(input_dataset, batch_size, train_ratio=0.8, val_ratio=0.1):
+    rand_gen = torch.Generator().manual_seed(142)
+    test_ratio = 1.0 - train_ratio - val_ratio
+    train_dataset, val_dataset, test_dataset = random_split(
+        dataset = input_dataset,
+        lengths = [train_ratio, val_ratio, test_ratio],
+        generator = rand_gen
+    )
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
