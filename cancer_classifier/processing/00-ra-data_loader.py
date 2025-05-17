@@ -43,33 +43,33 @@ class BrainTumorDataset(Dataset):
         label = self.labels[idx]
         return image, label
     
-def get_dataloader(input_dataset, batch_size, train_split=0.8, val_split=0.1):
-    train_size = int(train_split * len(input_dataset))
-    val_size = int(val_split * len(input_dataset))
-    test_size = len(input_dataset) - train_size - val_size
-    train_dataset, val_dataset, test_dataset = random_split(input_dataset, [train_size, val_size, test_size])
-    
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
-    return train_loader, val_loader, test_loader
+    def get_dataloader(self, batch_size, train_split=0.8, val_split=0.1):
+        train_size = int(train_split * len(self))
+        val_size = int(val_split * len(self))
+        test_size = len(self) - train_size - val_size
+        train_dataset, val_dataset, test_dataset = random_split(self, [train_size, val_size, test_size])
+        
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        
+        return train_loader, val_loader, test_loader
 
 
-def get_mean_std(dataset, batch_size=256):
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    mean = 0.0
-    std = 0.0
-    total = 0.0
-    for images, _ in loader:
-        batch = images.size(0)
-        images = images.view(batch, -1)
-        mean += images.mean(1).sum(0)
-        std += images.std(1).sum(0)
-        total += batch
-    mean /= total
-    std /= total
-    return torch.tensor([mean]), torch.tensor([std])
+    def get_mean_std(self, batch_size=256):
+        loader = DataLoader(self, batch_size=batch_size, shuffle=False)
+        mean = 0.0
+        std = 0.0
+        total = 0.0
+        for images, _ in loader:
+            batch = images.size(0)
+            images = images.view(batch, -1)
+            mean += images.mean(1).sum(0)
+            std += images.std(1).sum(0)
+            total += batch
+        mean /= total
+        std /= total
+        return torch.tensor([mean]), torch.tensor([std])
 
 def unnormalize(img, input_mean, input_std):
     img = img.cpu().numpy().squeeze(0)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     
     raw_dataset = BrainTumorDataset(root_dir=ROOT_DIR, transform=transform_pipeline, max_samples=MAX_SAMPLES)
     
-    mean, std = get_mean_std(raw_dataset)
+    mean, std = raw_dataset.get_mean_std()
     print("Mean:", mean)
     print("Std:", std)
     
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     
     dataset = BrainTumorDataset(root_dir=ROOT_DIR, transform=transform_pipeline, max_samples=MAX_SAMPLES)
     
-    train_loader, val_loader, test_loader = get_dataloader(dataset, BATCH_SIZE)
+    train_loader, val_loader, test_loader = dataset.get_dataloader(BATCH_SIZE)
     
     print("Train samples:", len(train_loader.dataset))
     print("Val samples:", len(val_loader.dataset))
