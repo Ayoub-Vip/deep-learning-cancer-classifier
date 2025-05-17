@@ -37,7 +37,7 @@ class BrainTumorDataset(Dataset):
         return len(self.image_paths)
     
     def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]).convert("RGB")
+        image = Image.open(self.image_paths[idx]).convert("L")
         if self.transform:
             image = self.transform(image)
         label = self.labels[idx]
@@ -58,21 +58,21 @@ def get_dataloader(input_dataset, batch_size, train_split=0.8, val_split=0.1):
 
 def get_mean_std(dataset, batch_size=256):
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    mean = torch.zeros(3)
-    std = torch.zeros(3)
-    total = 0
+    mean = 0.0
+    std = 0.0
+    total = 0.0
     for images, _ in loader:
         batch = images.size(0)
-        images = images.view(batch, 3, -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
+        images = images.view(batch, -1)
+        mean += images.mean(1).sum(0)
+        std += images.std(1).sum(0)
         total += batch
     mean /= total
     std /= total
-    return mean, std
+    return torch.tensor([mean]), torch.tensor([std])
 
 def unnormalize(img, input_mean, input_std):
-    img = img.cpu().numpy().transpose(1, 2, 0)
+    img = img.cpu().numpy().squeeze(0)
     img = input_std * img + input_mean
     img = np.clip(img, 0, 1)
     return img
