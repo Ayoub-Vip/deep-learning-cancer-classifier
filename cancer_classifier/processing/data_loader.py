@@ -107,6 +107,10 @@ if __name__ == "__main__":
     print("Train samples:", len(train_loader.dataset))
     print("Val samples:", len(val_loader.dataset))
     print("Test samples:", len(test_loader.dataset))
+    
+    a, b = train_loader
+    print(a, b)
+    
 
     train_images, _ = next(iter(train_loader))
     test_images, _ = next(iter(test_loader))
