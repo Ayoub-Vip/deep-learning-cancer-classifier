@@ -19,10 +19,12 @@ class BrainTumorDataset(Dataset):
     def __init__(self, root_dir, transform=None, max_samples=None):
         self.image_paths = []
         self.labels = []
+        
+        ALLOWED_CLASSES = ["brain_glioma", "brain_menin", "brain_tumor"]
         self.class_to_idx = {
-            cls: idx for idx, cls in enumerate(sorted(os.listdir(root_dir)))
+            cls: idx for idx, cls in enumerate(ALLOWED_CLASSES)
             if os.path.isdir(os.path.join(root_dir, cls))
-            }
+        }
         
         for cls in self.class_to_idx:
             cls_dir = os.path.join(root_dir, cls)
