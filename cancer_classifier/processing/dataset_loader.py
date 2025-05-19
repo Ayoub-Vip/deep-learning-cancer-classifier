@@ -93,15 +93,15 @@ def unnormalize(img, input_mean, input_std):
     img = np.clip(img, 0, 1)
     return img
 
-def preprocess_images(directory=RAW_DATA_DIR,img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
+def preprocess_images(src_dir=RAW_DATA_DIR, dist_dir=PROCESSED_DATA_DIR,img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
     for i, cls in tqdm(enumerate(CLASSES), colour="blue", desc="Processing classes"):
-        cls_dir = os.path.join(directory, cls)
-        for img_name in tqdm(os.listdir(cls_dir)):
+        cls_dir = os.path.join(src_dir, cls)
+        for img_name in os.listdir(cls_dir):
             img_path = os.path.join(cls_dir, img_name)
             img = crop_image(img_path, img_size, clip_limit, tile_size)
             # img = adjust_image_contrast(img)
             # save in processed directory
-            cv2.imwrite(os.path.join(PROCESSED_DATA_DIR, cls, img_name), img)
+            cv2.imwrite(os.path.join(dist_dir, cls, img_name), img)
             
 
 

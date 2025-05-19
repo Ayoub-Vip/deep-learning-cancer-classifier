@@ -19,6 +19,8 @@ from torch.utils.data import TensorDataset, DataLoader
 def adjust_image_contrast(image, clip_limit=2.0, tile_size=(1, 1)):
 
     # CLAHE: ajust contrast 
+    if clip_limit is None or tile_size is None:
+        return image
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_size)
     image_clahe = clahe.apply(image)
 

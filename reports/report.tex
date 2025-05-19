@@ -36,3 +36,17 @@
 % convolution layers in patch embedding is helps extracting local features/dependencies, which is suitable for our case, as cancer usualy located in one 
 % image preprocessing: The MRI images were preprocessed by cropping out the surrounding black space, ensuring that only the Region of Interest (ROI) is retained, which  reduces unnecessary background noise, and better resize :
 % torchvision.transforms.RandomResizedCrop is not used, to not accidently exclude cancerious regions, ((negative/positive) bias??) 
+
+
+ViT is competetive for large datasets, but for small ones like the one we have, CNN converges faster and achieves 'better results' (accuracy $95.5\%$), even after data augmentation, Vit never hits the barre of $90\%$
+
+here is the architecture tree that we have made:
+
+
+% coversation: https://github.com/google-research/vision_transformer/issues/61#issuecomment-802233921
+%Question title: Is the extra class embedding important to predict the results, why not simply use feature maps to predict? #61
+
+% Different from the common ways to use feature maps to obtain classifcation prediction (with fc or GAP layers), VIT employs an extra class embedding to do this without using feature maps explicitly. Wonder the meanings of this unusual design?
+% BTW, I used official pre-training params to fine-tune VIT on a small dataset, found that the validation accuracy is a little better after I replaced the feature maps with leanable class embedding to predict. So is the class embedding (maybe like a kind of query within encoder) important to learn and to predict?
+
+% Lucas Beyer %%Great question. It is not really important. However, we wanted the model to be "exactly Transformer, but on image patches", so we kept this design from Transformer, where a token is always used.

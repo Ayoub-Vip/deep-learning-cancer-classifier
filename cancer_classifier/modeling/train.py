@@ -4,6 +4,9 @@ import torch
 import numpy as np
 
 from pathlib import Path
+import torch.nn as nn
+import numpy as np
+from ray import tune
 #from loguru import logger
 from tqdm import tqdm
 import typer
@@ -12,78 +15,99 @@ from cancer_classifier.config import MODELS_DIR, PROCESSED_DATA_DIR
 
 app = typer.Typer()
 
-def train(input_model, input_train_loader, input_test_loader, input_optimizer,
-          input_criterion, epochs, input_device, save_freq, save_path):
-    
-    avg_train_losses_history = []
-    avg_test_losses_history = []
-    
-    for epoch in tqdm(range(epochs), desc="Training"):
-        epoch_start = time.time()
-        input_model.train()
-        train_losses, train_accs = [], []
-        
-        # training loop
-        for images, labels in input_train_loader:
-            images = images.to(input_device)
-            labels = labels.to(input_device)
-            
-            outputs = input_model(images)
-            loss = input_criterion(outputs, labels)
-            
-            input_optimizer.zero_grad()
+def get_model(model_name, model_class, args, device):
+    if model_name == "cnn":
+        model = model_class(
+            fc_dropout_prob=args['fc_dropout_prob'],
+            num_classes=3
+        )
+    elif model_name == "vit":
+        model = model_class(
+            img_size=args["img_size"],
+            patch_size=args["patch_size"],
+            num_hiddens=args["num_hiddens"],
+            mlp_num_hiddens=args["mlp_num_hiddens"],
+            num_heads=args["num_heads"],
+            num_blks=args["num_blks"],
+            emb_dropout=args["emb_dropout"],
+            blk_dropout=args["blk_dropout"],
+            use_bias=args["use_bias"],
+            num_classes=args["num_classes"]
+        )
+    else:
+        raise ValueError(f"Unsupported model type: {model_name}")
+    return model.to(device)
+
+
+def train(config, model_class, device, dataset, checkpoint_dir=None):
+    # Get dataloaders from config (injected via tune.with_parameters)
+    train_loader, val_loader, test_loader = dataset.get_dataloaders(
+        batch_size=config["batch_size"]
+    )
+
+    # Build model
+    model = get_model(config["model_name"], model_class, config, device)
+
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config["learning_rate"],
+        weight_decay=config["weights_decay"]
+    )
+    criterion = nn.CrossEntropyLoss()
+
+    if checkpoint_dir:
+        checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint.pt"))
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+    train_losses, val_losses = [], []
+    train_accuracies, val_accuracies = [], []
+
+    for epoch in tqdm(range(config["epochs"]), desc="Training"):
+        model.train()
+        for images, labels in train_loader:
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
             loss.backward()
-            input_optimizer.step()
+            optimizer.step()
 
+            acc = (outputs.argmax(dim=1) == labels).float().mean().item()
             train_losses.append(loss.item())
-            train_accs.append((outputs.argmax(dim=1) == labels).float().mean().item())
-            
-        # evaluation loop
-        input_model.eval()
-        test_losses, test_accs = [], []
+            train_accuracies.append(acc)
+
+        model.eval()
         with torch.no_grad():
-            for images, labels in input_test_loader:
-                images = images.to(input_device)
-                labels = labels.to(input_device)
+            for images, labels in val_loader:
+                images, labels = images.to(device), labels.to(device)
 
-                outputs = input_model(images)
-                loss = input_criterion(outputs, labels)
-                
-                test_losses.append(loss.item())
-                test_accs.append((outputs.argmax(dim=1) == labels).float().mean().item())
-                
-        avg_train_loss = np.mean(train_losses)
-        avg_train_acc = np.mean(train_accs)
-        avg_test_loss = np.mean(test_losses)
-        avg_test_acc = np.mean(test_accs)
-        
-        epoch_time = time.time() - epoch_start
-        
-        print(f"Epoch [{epoch+1}/{epochs}] "
-              f"Train Loss: {avg_train_loss:.4f}, Train Acc: {avg_train_acc:.4f} | "
-              f"Test Loss: {avg_test_loss:.4f}, Test Acc: {avg_test_acc:.4f} | "
-              f"Time: {epoch_time:.2f}s")
-        
-        # if we want to save epochs we can do it like this:
-        # if (epoch + 1) % save_freq == 0:
-        #     checkpoint_path = os.path.join(save_path, f"model_epoch_{epoch+1}.pt")
-        #     torch.save({
-        #         'epoch': epoch + 1,
-        #         'model_state_dict': input_model.state_dict(),
-        #         'optimizer_state_dict': input_optimizer.state_dict(),
-        #         'train_loss': avg_train_loss,
-        #         'test_loss': avg_test_loss,
-        #         'train_acc': avg_train_acc,
-        #         'test_acc': avg_test_acc,
-        #     }, checkpoint_path)
-        #     print(f"Saved checkpoint to {checkpoint_path}")
-        
-        avg_train_losses_history.append(avg_train_loss)
-        avg_test_losses_history.append(avg_test_loss)
+                outputs = model(images)
+                loss = criterion(outputs, labels)
 
-    # optionally we could plot the losses here:
-    # plot_losses(avg_train_losses_history, avg_test_losses_history)
-                
+                acc = (outputs.argmax(dim=1) == labels).float().mean().item()
+                val_losses.append(loss.item())
+                val_accuracies.append(acc)
+
+    avg_train_loss = np.mean(train_losses)
+    avg_val_loss = np.mean(val_losses)
+    avg_train_acc = np.mean(train_accuracies)
+    avg_val_acc = np.mean(val_accuracies)
+
+    tune.report({
+        "val_accuracy" : avg_val_acc,
+        "train_losses" : train_losses,
+        "val_losses" : val_losses,
+        "train_accuracies" : train_accuracies,
+        "val_accuracies" : val_accuracies,
+        "avg_train_loss" : avg_train_loss,
+        "avg_val_loss" : avg_val_loss,
+        "avg_train_acc" : avg_train_acc,
+        "avg_val_acc" : avg_val_acc
+        }
+    )
+
 @app.command()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
