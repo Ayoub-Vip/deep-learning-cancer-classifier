@@ -17,11 +17,14 @@ def visualize_sample_images(dataset, num_samples=5):
   class_indices = dataset.class_to_idx
 
   fig, axes = plt.subplots(len(class_indices), num_samples, figsize=(15, 10))
+  
   for i, class_name in enumerate(class_indices.keys()):
        class_idx = class_indices[class_name]
-       class_images = [img for img, label in dataset.imgs if label == class_idx][:num_samples]
-
-       for j, img_path in enumerate(class_images):
+       class_paths = [
+            path for path, lbl in zip(dataset.image_paths, dataset.labels)
+            if lbl == class_idx
+        ][:num_samples]
+       for j, img_path in enumerate(class_paths):
            img = plt.imread(img_path, format='gray')
            axes[i, j].imshow(img)
            axes[i, j].set_title(class_name)
@@ -43,6 +46,40 @@ def plot_confusion_matrix(true_classes, predicted_classes, model_name=None):
     plt.savefig(FIGURES_DIR / file_name)
     plt.show()
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_loss_curves(
+    train_batch_losses: list[list[float]],
+    test_batch_losses:  list[list[float]],
+    labels:             list[str],
+    batch_size:         int
+):
+    fig, (ax_tr, ax_te) = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
+
+    # Training loss subplot
+    for losses, name in zip(train_batch_losses, labels):
+        x = np.arange(1, len(losses) + 1)
+        ax_tr.plot(x, losses, label=name)
+    ax_tr.set_yscale('log')
+    ax_tr.set_xlabel('number of batches')
+    ax_tr.set_ylabel('Loss')
+    ax_tr.set_title('Training Loss')
+    ax_tr.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_tr.legend(loc='upper right')
+
+    # Test loss subplot
+    for losses, name in zip(test_batch_losses, labels):
+        x = np.arange(1, len(losses) + 1)
+        ax_te.plot(x, losses, label=name)
+    ax_te.set_yscale('log')
+    ax_te.set_xlabel('number of bztches')
+    ax_te.set_title('Test Loss')
+    ax_te.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_te.legend(loc='upper right')
+
+    plt.tight_layout()
+    plt.show()
 
 
 app = typer.Typer()
