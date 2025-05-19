@@ -1,14 +1,18 @@
+"""
+Example:
+    python train.py --data_path ./data --save_path ./checkpoints --epochs 50 --batch_size 32 ...
+"""
+
 import os
 import time
 import torch
 import numpy as np
-
 from pathlib import Path
-import torch.nn as nn
-import numpy as np
-from ray import tune
 #from loguru import logger
 from tqdm import tqdm
+from torchvision import transforms
+from torch import nn
+from ray import tune
 import typer
 
 from cancer_classifier.config import MODELS_DIR, PROCESSED_DATA_DIR
@@ -133,11 +137,13 @@ def main(
     # optimizer = torch.optim.Adam(MODEL.parameters(), lr=lr)
     # criterion = torch.nn.CrossEntropyLoss()
     
-    # train(MODEL, train_loader, test_loader, optimizer, criterion, epochs=epochs, input_device=device, save_freq=save_freq, save_path=save_path)
+    train(model, train_loader, val_loader, optimizer, criterion, epochs=args.epochs,
+          device=device, save_freq=args.save_freq, save_path=args.save_path)
     
-    # # Save the final model at save_path"
-    # final_model_local_path = save_final_model(MODEL, save_path)
-    pass
-
-if __name__ == "__main__":
-    app()
+    # Save final model
+    os.makedirs(args.save_path, exist_ok=True)
+    final_model_local_path = os.path.join(args.save_path, 'final_model.pt')
+    torch.save({'model_state_dict': model.state_dict()}, final_model_local_path)
+    print(f"Final model saved locally to {final_model_local_path}")
+    
+    
