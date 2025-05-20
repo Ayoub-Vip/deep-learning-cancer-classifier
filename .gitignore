@@ -187,6 +187,7 @@ cython_debug/
 
 # Custom: serialized models
 models/
+!cancer_classifier/modeling/models/
 notebooks/wandb/
 node_modules/
 package-lock.json
