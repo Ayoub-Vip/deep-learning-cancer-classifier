@@ -100,6 +100,8 @@ def unnormalize(img, input_mean, input_std):
 
 if __name__ == "__main__":
     
+    # Usage exemple
+    
     ROOT_DIR = "../../data/raw/"
     BATCH_SIZE = 32
     MAX_SAMPLES = 1000
@@ -129,10 +131,6 @@ if __name__ == "__main__":
     print("Val samples:", len(val_loader.dataset))
     print("Test samples:", len(test_loader.dataset))
     
-    a, b = train_loader
-    print(a, b)
-    
-
     train_images, _ = next(iter(train_loader))
     test_images, _ = next(iter(test_loader))
     val_images, _ = next(iter(val_loader))
