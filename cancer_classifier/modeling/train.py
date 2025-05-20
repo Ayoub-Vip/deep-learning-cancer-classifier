@@ -1,31 +1,16 @@
-"""
-Example:
-    python train.py --data_path ./data --save_path ./checkpoints --epochs 50 --batch_size 32 ...
-"""
-
 import os
-import sys
-import time
 import torch
 import numpy as np
-from pathlib import Path
-#from loguru import logger
 from tqdm import tqdm
-from torchvision import transforms
 from torch import nn
 from ray import tune
-import typer
-
-from cancer_classifier.config import MODELS_DIR, PROCESSED_DATA_DIR
-
-app = typer.Typer()
 
 def get_model(model_name, model_class, args, device):
     if model_name == "cnn":
         model = model_class(
             fc_dropout_prob=args['fc_dropout_prob'],
             dropout_prob=args['dropout_prob'],
-            num_classes=3
+            num_classes=args['num_classes']
         )
     elif model_name == "vit":
         model = model_class(
@@ -44,22 +29,25 @@ def get_model(model_name, model_class, args, device):
         raise ValueError(f"Unsupported model type: {model_name}")
     return model.to(device)
 
+def get_optimizer(config, model):
+    if config["optimizer"].lower() == "adamw":
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=config["learning_rate"],
+            weight_decay=config["weights_decay"]
+        )
+    else:
+        raise ValueError(f"Unsupported optimizer: {config['optimizer']}")
+    return optimizer
 
-def train(config, model_class, device, dataset, checkpoint_dir=None):
-    # Get dataloaders from config (injected via tune.with_parameters)
-    train_loader, val_loader, test_loader = dataset.get_dataloaders(
-        batch_size=config["batch_size"]
-    )
+def train(config, model_class, device, train_data, val_data, test_data, checkpoint_dir=None, tune=False):
 
-    # Build model
+    train_loader, val_loader, test_loader = train_data, val_data, test_data
+
     model = get_model(config["model_name"], model_class, config, device)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=config["learning_rate"],
-        weight_decay=config["weights_decay"]
-    )
-    criterion = nn.CrossEntropyLoss()
+    optimizer = get_optimizer(config, model)
+    criterion = config["loss_fn"]
 
     if checkpoint_dir:
         checkpoint = torch.load(os.path.join(checkpoint_dir, "checkpoint.pt"))
@@ -119,60 +107,46 @@ def train(config, model_class, device, dataset, checkpoint_dir=None):
     avg_val_acc = np.mean(val_accuracies)
     avg_test_acc = np.mean(test_accuracies)
 
-    tune.report({
-        "train_losses" : train_losses,
-        "val_losses" : val_losses,
-        "test_losses" : test_losses,
-        
-        "avg_train_loss" : avg_train_loss,
-        "avg_val_loss" : avg_val_loss,
-        "avg_test_loss" : avg_test_loss,
-        
-        "train_accuracies" : train_accuracies,
-        "val_accuracies" : val_accuracies,
-        "test_accuracies" : test_accuracies,
-        
-        "avg_train_acc" : avg_train_acc,
-        "avg_val_acc" : avg_val_acc,
-        "avg_test_acc" : avg_test_acc,
-        
-        "true_labels" : true_labels,
-        "pred_labels" : pred_labels
+    if tune:
+        tune.report({
+            "train_losses" : train_losses,
+            "val_losses" : val_losses,
+            "test_losses" : test_losses,
+            
+            "avg_train_loss" : avg_train_loss,
+            "avg_val_loss" : avg_val_loss,
+            "avg_test_loss" : avg_test_loss,
+            
+            "train_accuracies" : train_accuracies,
+            "val_accuracies" : val_accuracies,
+            "test_accuracies" : test_accuracies,
+            
+            "avg_train_acc" : avg_train_acc,
+            "avg_val_acc" : avg_val_acc,
+            "avg_test_acc" : avg_test_acc,
+            
+            "true_labels" : true_labels,
+            "pred_labels" : pred_labels
+            }
+        )
+    else:
+        return {
+            "train_losses" : train_losses,
+            "val_losses" : val_losses,
+            "test_losses" : test_losses,
+            
+            "avg_train_loss" : avg_train_loss,
+            "avg_val_loss" : avg_val_loss,
+            "avg_test_loss" : avg_test_loss,
+            
+            "train_accuracies" : train_accuracies,
+            "val_accuracies" : val_accuracies,
+            "test_accuracies" : test_accuracies,
+            
+            "avg_train_acc" : avg_train_acc,
+            "avg_val_acc" : avg_val_acc,
+            "avg_test_acc" : avg_test_acc,
+            
+            "true_labels" : true_labels,
+            "pred_labels" : pred_labels
         }
-    )
-
-@app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    features_path: Path = PROCESSED_DATA_DIR / "features.csv",
-    labels_path: Path = PROCESSED_DATA_DIR / "labels.csv",
-    model_path: Path = MODELS_DIR / "model.pkl",
-    # -----------------------------------------
-):
-    # # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    # logger.info("Training some model...")
-    # for i in tqdm(range(10), total=10):
-    #     if i == 5:
-    #         logger.info("Something happened for iteration 5.")
-    # logger.success("Modeling training complete.")
-    # # -----------------------------------------
-
-
-    # I commented the following section out because there is a lot of unknowns for me. I need to know how 
-    
-    # dataset = OURDATASET()
-    # train_data, test_data = get_dataloader()
-    # MODEL = OURMODEL(NUM_MATE_FEATURES, NUM_CLASSES).to(device)
-    # optimizer = torch.optim.Adam(MODEL.parameters(), lr=lr)
-    # criterion = torch.nn.CrossEntropyLoss()
-    
-    train(model, train_loader, val_loader, optimizer, criterion, epochs=args.epochs,
-          device=device, save_freq=args.save_freq, save_path=args.save_path)
-    
-    # Save final model
-    os.makedirs(args.save_path, exist_ok=True)
-    final_model_local_path = os.path.join(args.save_path, 'final_model.pt')
-    torch.save({'model_state_dict': model.state_dict()}, final_model_local_path)
-    print(f"Final model saved locally to {final_model_local_path}")
-    
-    
