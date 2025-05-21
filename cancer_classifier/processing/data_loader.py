@@ -53,6 +53,7 @@ class BrainTumorDataset(Dataset):
         return image, label
 
     def preprocess_images(self, img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
+        self.root_dir = PROCESSED_DATA_DIR
         for i, cls in enumerate(CLASSES):
             cls_dir = os.path.join(self.root_dir, cls)
             for img_name in os.listdir(cls_dir):
@@ -108,7 +109,7 @@ class BrainTumorDataset(Dataset):
     
     def get_corrupt_images(self):
         corrupt_images = []
-        for path in dataset.image_paths:
+        for path in self.image_paths:
             try:
                 img = Image.open(path)
                 img.verify()
@@ -119,7 +120,7 @@ class BrainTumorDataset(Dataset):
     def get_black_images(self):
         black_images = []
         to_tensor = transforms.ToTensor()
-        for path in dataset.image_paths:
+        for path in self.image_paths:
             img = to_tensor(Image.open(path).convert('RGB'))
             if torch.all(img == 0):
                 black_images.append(path)
@@ -128,7 +129,7 @@ class BrainTumorDataset(Dataset):
     def get_duplicate_images(self):
         hashes = {}
         duplicates = []
-        for path in dataset.image_paths:
+        for path in self.image_paths:
             with open(path, 'rb') as f:
                 filehash = hashlib.md5(f.read()).hexdigest()
             if filehash in hashes:
@@ -138,13 +139,13 @@ class BrainTumorDataset(Dataset):
         return duplicates
 
     def plot_brightness(self):
-        brightness = {cls: [] for cls in dataset.class_to_idx}
+        brightness = {cls: [] for cls in self.class_to_idx}
 
-        for path, label in zip(dataset.image_paths, dataset.labels):
+        for path, label in zip(self.image_paths, self.labels):
             img = Image.open(path).convert('L')
             stat = ImageStat.Stat(img)
             brightness_value = stat.mean[0]
-            for cls_name, idx in dataset.class_to_idx.items():
+            for cls_name, idx in self.class_to_idx.items():
                 if idx == label:
                     brightness[cls_name].append(brightness_value)
 
