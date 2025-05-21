@@ -1,11 +1,3 @@
-# cancer-classifier
-
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
-
-this DL model classifies the type of cancer in MRI brain images
-
 ## Project Organization
 
 ```
@@ -23,21 +15,36 @@ this DL model classifies the type of cancer in MRI brain images
 ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
 │   └── figures        <- Generated graphics and figures to be used in reporting
 │
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
+├── main.ipynb         <- Main notebook used to train and tune models
+|
+├── results_cnn.json
+├── results_ViT_diff_head_cls_model.json
+├── results_ViT_diff_head_mlp_over_rep.json
+├── results_Vit_diff_head_no_cls_model.json
+├── results_ViT_ref_book.json
+|
 └── cancer_classifier   <- Source code for use in this project.
     │
     ├── __init__.py             <- Makes cancer_classifier a Python module
-    │
     ├── config.py               <- Store useful variables and configuration
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
+    |
+    ├── modeling                <- Contrains models, training and tuning code
+    |   |
+    |   ├── models              <- Contains models
+    |   |   ├── cnnmodel.py
+    |   |   ├── vit_diff_head_cls
+    |   |   ├── vit_diff_head_mlp_over_rep.py
+    |   |   ├── vit_diff_head_no_cls
+    |   |   └──vit_ref_book.py
+    |   |
+    │   └── train.py            <- Code to train models and tune models
+    |
+    └── processing              <- Contrains data loader, data processing and plot code
+        │
+        ├── data_loader.py      <- The main data loader
+        ├── dataset_loader.py   <- Not relevent anymore, it is still called in some old notebooks
+        ├── image_utils.py      <- Utility functions for image processing
+        └── plots.py            <- Code to create visualizations
 ```
 
---------
 
