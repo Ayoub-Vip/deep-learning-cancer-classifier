@@ -1,4 +1,0 @@
-we explained that the pooling layer can reduce the sensitivity
-of a convolutional layer to the target position. In addition, we can also randomly crop the
-image to make objects appear in different positions in the image at different scales, which
-can also reduce the sensitivity of a model to the target position.
