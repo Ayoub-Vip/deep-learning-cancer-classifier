@@ -14,8 +14,8 @@ Here is the structure of the project. The main file to look at is main.ipynb. It
 │                         the creator's initials, and a short `-` delimited description, e.g.
 │                         `1.0-jqp-initial-data-exploration`.
 │
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
+├── reports
+│   └── figures
 │
 ├── main.ipynb         <- Main notebook with some data exploratory, train & tuning models and plots
 |
