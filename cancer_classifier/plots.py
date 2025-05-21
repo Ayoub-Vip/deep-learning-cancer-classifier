@@ -81,6 +81,70 @@ def plot_loss_curves(
     plt.tight_layout()
     plt.show()
 
+def plot_acc_curves_no_log(
+    train_batch_accuracies: list[list[float]],
+    test_batch_accuracies:  list[list[float]],
+    labels:             list[str],
+    batch_size:         int
+):
+    fig, (ax_tr, ax_te) = plt.subplots(1, 2, figsize=(18, 5), sharey=True)
+
+    # Training loss subplot
+    for accuracies, name in zip(train_batch_accuracies, labels):
+        x = np.arange(1, len(accuracies) + 1)*15
+        ax_tr.plot(x, accuracies, label=name, linewidth=.45)
+    # ax_tr.set_yscale('log')
+    ax_tr.set_xlabel('number of batches')
+    ax_tr.set_ylabel('Accuracy')
+    ax_tr.set_title('Training accuracy per batch')
+    ax_tr.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_tr.legend(loc='upper right')
+
+    # Test loss subplot
+    for accuracies, name in zip(test_batch_accuracies, labels):
+        x = np.arange(1, len(accuracies) + 1)*10
+        ax_te.plot(x, accuracies, label=name, linewidth=.55)
+    # ax_te.set_yscale('log')
+    ax_te.set_xlabel('number of batches')
+    ax_te.set_title('Test accuracy per batch')
+    ax_te.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_te.legend(loc='upper right')
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_loss_curves_no_log(
+    train_batch_losses: list[list[float]],
+    test_batch_losses:  list[list[float]],
+    labels:             list[str],
+    batch_size:         int
+):
+    fig, (ax_tr, ax_te) = plt.subplots(1, 2, figsize=(18, 5), sharey=True)
+
+    # Training loss subplot
+    for losses, name in zip(train_batch_losses, labels):
+        x = np.arange(1, len(losses) + 1)*15
+        ax_tr.plot(x, losses, label=name, linewidth=.45)
+    # ax_tr.set_yscale('log')
+    ax_tr.set_xlabel('number of batches')
+    ax_tr.set_ylabel('Loss')
+    ax_tr.set_title('Training losses per batch')
+    ax_tr.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_tr.legend(loc='upper right')
+
+    # Test loss subplot
+    for losses, name in zip(test_batch_losses, labels):
+        x = np.arange(1, len(losses) + 1)*10
+        ax_te.plot(x, losses, label=name, linewidth=.55)
+    # ax_te.set_yscale('log')
+    ax_te.set_xlabel('number of batches')
+    ax_te.set_title('Test losses per batch')
+    ax_te.grid(which='both', linestyle='--', linewidth=0.5)
+    ax_te.legend(loc='upper right')
+
+    plt.tight_layout()
+    plt.show()
+
 
 app = typer.Typer()
 
