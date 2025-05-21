@@ -15,7 +15,7 @@
 ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
 │   └── figures        <- Generated graphics and figures to be used in reporting
 │
-├── main.ipynb         <- Main notebook used to train and tune models
+├── main.ipynb         <- Main notebook with some data exploratory, train & tuning models and plots
 |
 ├── results_cnn.json
 ├── results_ViT_diff_head_cls_model.json
