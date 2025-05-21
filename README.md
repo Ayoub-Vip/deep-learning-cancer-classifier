@@ -1,7 +1,9 @@
 ## Project Organization
 
+Here is the structure of the project. The main file to look at is main.ipynb. It was more convenient to use a notebook for running the code on the cluster.
+
 ```
-├── README.md          <- The top-level README for developers using this project.
+├── README.md
 ├── data
 │   ├── external       <- Data from third party sources.
 │   ├── interim        <- Intermediate data that has been transformed.
