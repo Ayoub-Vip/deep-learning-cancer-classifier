@@ -40,7 +40,7 @@ def get_optimizer(config, model):
         raise ValueError(f"Unsupported optimizer: {config['optimizer']}")
     return optimizer
 
-def train(config, model_class, device, train_data, val_data, test_data, checkpoint_dir=None, tune=False):
+def train(config, model_class, device, train_data, val_data, test_data, checkpoint_dir=None, toTune=False):
 
     train_loader, val_loader, test_loader = train_data, val_data, test_data
 
@@ -107,7 +107,7 @@ def train(config, model_class, device, train_data, val_data, test_data, checkpoi
     avg_val_acc = np.mean(val_accuracies)
     avg_test_acc = np.mean(test_accuracies)
 
-    if tune:
+    if toTune:
         tune.report({
             "train_losses" : train_losses,
             "val_losses" : val_losses,
@@ -123,7 +123,6 @@ def train(config, model_class, device, train_data, val_data, test_data, checkpoi
             
             "avg_train_acc" : avg_train_acc,
             "avg_val_acc" : avg_val_acc,
-            "avg_test_acc" : avg_test_acc,
             
             "true_labels" : true_labels,
             "pred_labels" : pred_labels
