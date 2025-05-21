@@ -2,12 +2,14 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
-from PIL import Image
+from PIL import Image, UnidentifiedImageError, ImageStat
 import numpy as np
 import matplotlib.pyplot as plt
 from cancer_classifier.processing.image_utils import crop_image, adjust_image_contrast
 from cancer_classifier.config import RAW_DATA_DIR, PROCESSED_DATA_DIR, CLASSES
 import cv2
+import hashlib
+import random
 
 
 class BrainTumorDataset(Dataset):
@@ -19,6 +21,7 @@ class BrainTumorDataset(Dataset):
     def __init__(self, root_dir, transform=None, max_samples=None):
         self.image_paths = []
         self.labels = []
+        self.root_dir = root_dir
         
         ALLOWED_CLASSES = ["brain_glioma", "brain_menin", "brain_tumor"]
         self.class_to_idx = {
@@ -51,7 +54,7 @@ class BrainTumorDataset(Dataset):
 
     def preprocess_images(self, img_size=(256, 256), clip_limit=2.0, tile_size=(1, 1)):
         for i, cls in enumerate(CLASSES):
-            cls_dir = os.path.join(RAW_DATA_DIR, cls)
+            cls_dir = os.path.join(self.root_dir, cls)
             for img_name in os.listdir(cls_dir):
                 img_path = os.path.join(cls_dir, img_name)
                 img = crop_image(img_path, img_size, clip_limit, tile_size)
@@ -91,6 +94,86 @@ class BrainTumorDataset(Dataset):
         mean /= total
         std /= total
         return torch.tensor([mean]), torch.tensor([std])
+    
+    def get_set_image_sizes(self, classes):
+        image_dims = []
+        for cls in classes:
+            cls_dir = os.path.join(self.root_dir, cls)
+            for img_file in os.listdir(cls_dir):
+                if img_file.lower().endswith('.jpg'):
+                    img_path = os.path.join(cls_dir, img_file)
+                    with Image.open(img_path) as img:
+                        image_dims.append(img.size)
+        return set(image_dims)
+    
+    def get_corrupt_images(self):
+        corrupt_images = []
+        for path in dataset.image_paths:
+            try:
+                img = Image.open(path)
+                img.verify()
+            except (UnidentifiedImageError, OSError):
+                corrupt_images.append(path)
+        return corrupt_images
+    
+    def get_black_images(self):
+        black_images = []
+        to_tensor = transforms.ToTensor()
+        for path in dataset.image_paths:
+            img = to_tensor(Image.open(path).convert('RGB'))
+            if torch.all(img == 0):
+                black_images.append(path)
+        return black_images
+    
+    def get_duplicate_images(self):
+        hashes = {}
+        duplicates = []
+        for path in dataset.image_paths:
+            with open(path, 'rb') as f:
+                filehash = hashlib.md5(f.read()).hexdigest()
+            if filehash in hashes:
+                duplicates.append((path, hashes[filehash]))
+            else:
+                hashes[filehash] = path
+        return duplicates
+
+    def plot_brightness(self):
+        brightness = {cls: [] for cls in dataset.class_to_idx}
+
+        for path, label in zip(dataset.image_paths, dataset.labels):
+            img = Image.open(path).convert('L')
+            stat = ImageStat.Stat(img)
+            brightness_value = stat.mean[0]
+            for cls_name, idx in dataset.class_to_idx.items():
+                if idx == label:
+                    brightness[cls_name].append(brightness_value)
+
+        for cls, values in brightness.items():
+            plt.hist(values, bins=50, alpha=0.6, label=cls)
+
+        plt.legend()
+        plt.title("Brightness distribution per class")
+        plt.xlabel("Brightness")
+        plt.ylabel("Frequency")
+        plt.show()
+        
+    def plot_sample(self, classes, samples_per_class):
+        fig, axes = plt.subplots(len(classes), samples_per_class, figsize=(15, 4 * len(classes)))
+        for i, cls in enumerate(classes):
+            class_path = os.path.join(self.root_dir, cls)
+            images = [img for img in os.listdir(class_path) if img.endswith('.jpg')]
+            chosen = random.sample(images, samples_per_class)
+
+            for j, img_name in enumerate(chosen):
+                img_path = os.path.join(class_path, img_name)
+                img = Image.open(img_path).convert('RGB')
+                axes[i, j].imshow(img)
+                axes[i, j].set_title(cls)
+                axes[i, j].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+    
 
 def unnormalize(img, input_mean, input_std):
     img = img.cpu().numpy().squeeze(0)
