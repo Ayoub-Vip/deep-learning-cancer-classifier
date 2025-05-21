@@ -1,1 +1,1 @@
-from cancer_classifier import config  # noqa: F401
+from cancer_classifier import config

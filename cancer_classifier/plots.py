@@ -1,17 +1,8 @@
-from pathlib import Path
-
-from loguru import logger
-from tqdm import tqdm
-import typer
-
-from cancer_classifier.config import FIGURES_DIR, PROCESSED_DATA_DIR, CLASSES
+from cancer_classifier.config import FIGURES_DIR, CLASSES
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-# from PIL import Image
-# import cv2
-import torch
+from sklearn.metrics import confusion_matrix
 
 def visualize_sample_images(dataset, num_samples=5):
   class_indices = dataset.class_to_idx
@@ -144,26 +135,3 @@ def plot_loss_curves_no_log(
 
     plt.tight_layout()
     plt.show()
-
-
-app = typer.Typer()
-
-
-@app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    input_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-    output_path: Path = FIGURES_DIR / "plot.png",
-    # -----------------------------------------
-):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Generating plot from data...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Plot generation complete.")
-    # -----------------------------------------
-
-
-if __name__ == "__main__":
-    app()
